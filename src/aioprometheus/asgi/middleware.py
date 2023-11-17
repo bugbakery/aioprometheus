@@ -141,14 +141,14 @@ class MetricsMiddleware:
             # However, in unit tests that use the starlette httpx test client
             # it appears that the ASGI 'lifespan' call is not made. In this
             # scenario obtain the app reference from the 'http' scope.
-            if scope["type"] in ("lifespan", "http"):
+            if scope["type"] in ("lifespan", "http", "websocket"):
                 self.starlette_app = scope.get("app")
 
         if scope["type"] == "lifespan":
             await self.asgi_callable(scope, receive, send)
             return
 
-        if scope["type"] == "http":
+        if scope["type"] in ("http", "websocket"):
 
             def wrapped_send(response):
                 """
@@ -171,7 +171,7 @@ class MetricsMiddleware:
 
             # Store HTTP path and method so they can be used later in the send
             # method to complete metrics updates.
-            method = scope["method"]
+            method = scope.get("method")
             path = self.get_full_or_template_path(scope)
             labels = {"method": method, "path": path}
 
